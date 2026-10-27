@@ -81,7 +81,7 @@ options=(
     --pkg-config-flags=--static
 )
 case "$platform" in
-    windows) options+=(--disable-pthreads --extra-ldflags=-static-libgcc) ;;
+    windows) options+=(--disable-pthreads --extra-ldflags=-static-libgcc --extra-libs=-l:libwinpthread.a) ;;
     linux) options+=("--extra-ldflags=-Wl,-rpath,'\$\$ORIGIN'") ;;
     macos) options+=(--install-name-dir=@rpath) ;;
 esac
@@ -98,6 +98,9 @@ cp "$root/COPYING.LGPLv2.1" "$prefix/share/san9/licenses/FFmpeg-LGPL-2.1.txt"
 cp "$root/LICENSE.md" "$prefix/share/san9/licenses/FFmpeg-LICENSE.md"
 cp "$work/libogg-$ogg_version/COPYING" "$prefix/share/san9/licenses/libogg-COPYING.txt"
 cp "$work/libvorbis-$vorbis_version/COPYING" "$prefix/share/san9/licenses/libvorbis-COPYING.txt"
+if [[ "$platform" == windows ]]; then
+    cp "$root/tools/san9/licenses/winpthreads-COPYING.txt" "$prefix/share/san9/licenses/"
+fi
 {
     printf 'FFmpeg source: https://github.com/cdd1037/FFmpeg\n'
     printf 'FFmpeg commit: %s\n' "$(git -C "$root" rev-parse HEAD)"

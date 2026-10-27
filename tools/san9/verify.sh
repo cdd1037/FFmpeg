@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="$prefix/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export DYLD_LIBRARY_PATH="$prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 link=(-L"$prefix/lib" -lavformat -lavcodec -lavutil -L"$deps/lib" -lvorbisfile -lvorbis -logg -lm)
 case "$rid" in
-    win-*) link+=(-static-libgcc) ;;
+    win-*) link+=(-static-libgcc -l:libwinpthread.a) ;;
     osx-*) link+=("-Wl,-rpath,$prefix/lib") ;;
 esac
 "${CC:-cc}" -std=c11 -Wall -Wextra -Werror -O2 \

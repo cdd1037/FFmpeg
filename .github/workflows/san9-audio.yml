@@ -71,6 +71,19 @@ jobs:
         run: bash tools/san9/build.sh '${{ matrix.rid }}'
       - name: Package libraries and notices
         run: bash tools/san9/package.sh '${{ matrix.rid }}'
+      - name: Verify Windows package without the compiler environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runtime = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+          New-Item -ItemType Directory -Path $runtime | Out-Null
+          & "$env:SystemRoot/System32/tar.exe" -xzf '.san9/packages/san9-audio-win-x64.tar.gz' -C $runtime
+          if ($LASTEXITCODE -ne 0) { throw 'Could not extract the Windows package.' }
+          $native = Join-Path $runtime 'runtimes/win-x64/native'
+          $env:PATH = "$native;$env:SystemRoot/System32"
+          & '.san9/build/win-x64/verify-audio.exe' 'tests/san9/stereo.wma' (Join-Path $runtime 'stereo.ogg')
+          if ($LASTEXITCODE -ne 0) { throw 'The package needs an undeclared runtime dependency.' }
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: san9-audio-${{ matrix.rid }}

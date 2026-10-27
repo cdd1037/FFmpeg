@@ -8,6 +8,8 @@
 
 只构建 `libavformat`、`libavcodec`、`libavutil` 三个共享库。libogg 1.3.5 与 libvorbis 1.3.7 经过 SHA-256 校验后静态链接进去。WMA v2 解码与 libvorbis 编码都使用 FLTP，保持原有采样率和声道布局，无需重采样库。关闭其他组件、外部库自动探测、网络、程序、滤镜、视频缩放和设备库，以及 GPL/nonfree/version3 组件。
 
+Windows 的 MinGW 计时函数依赖 winpthreads，构建时显式链接其静态库，并随包保留许可证。CI 另外在仅包含系统目录与包内 DLL 的 PATH 下运行实际转换，防止漏带编译环境中的运行库。
+
 上游源码保持完整，通过专用配置裁剪产物，便于继续更新源代码。配置不改变普通 FFmpeg 的构建默认值。
 
 ## 本地构建

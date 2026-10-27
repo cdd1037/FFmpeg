@@ -48,7 +48,8 @@ for name in "ogg-$ogg_version" "vorbis-$vorbis_version"; do
         -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$deps" \
         -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_PREFIX_PATH="$deps" \
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-        -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF
+        -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF \
+        -DVORBIS_LIBS=-lm
     cmake --build "$work/$name-cmake" --parallel "$jobs"
     cmake --install "$work/$name-cmake"
 done

@@ -44,13 +44,13 @@ fetch() {
 fetch ogg "$ogg_version" "$ogg_sha"
 fetch vorbis "$vorbis_version" "$vorbis_sha"
 for name in "ogg-$ogg_version" "vorbis-$vorbis_version"; do
-    mkdir -p "$work/$name-build"
-    (
-        cd "$work/$name-build"
-        "$work/lib$name/configure" --prefix="$deps" --disable-shared --enable-static --with-pic --disable-docs
-        make -j "$jobs"
-        make install
-    )
+    cmake -S "$work/lib$name" -B "$work/$name-cmake" -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$deps" \
+        -DCMAKE_INSTALL_LIBDIR=lib -DCMAKE_PREFIX_PATH="$deps" \
+        -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DINSTALL_DOCS=OFF
+    cmake --build "$work/$name-cmake" --parallel "$jobs"
+    cmake --install "$work/$name-cmake"
 done
 
 options=(

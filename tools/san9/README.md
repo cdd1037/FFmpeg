@@ -12,7 +12,7 @@
 
 ## 本地构建
 
-依赖 Bash、C 编译器、GNU Make、pkg-config、curl、tar/xz、SHA-256 工具；x86-64 构建还需要 NASM。Windows 使用 MSYS2 MINGW64 环境，Linux 使用本机 GCC，macOS ARM64 使用 Apple Clang。
+依赖 Bash、C 编译器、GNU Make、CMake、Ninja、pkg-config、curl、tar/xz、SHA-256 工具；x86-64 构建还需要 NASM。Windows 使用 MSYS2 MINGW64 环境，Linux 使用本机 GCC，macOS ARM64 使用 Apple Clang。Xiph 依赖统一使用其 CMake 构建入口。
 
 ```bash
 bash tools/san9/build.sh linux-x64
@@ -20,7 +20,7 @@ bash tools/san9/build.sh linux-x64
 # macOS:   bash tools/san9/build.sh osx-arm64
 ```
 
-构建目录默认为忽略的 `.san9/build/<RID>/`，可通过 `SAN9_BUILD_ROOT` 更改；`SAN9_JOBS` 控制并行度，默认 4。产物位于其中的 `install/`。同一工作目录只用于同一平台与工具链。每次执行会重新配置并复用 make 判断仍有效的对象文件；依赖归档每次均重新核验。
+构建目录默认为忽略的 `.san9/build/<RID>/`，可通过 `SAN9_BUILD_ROOT` 更改；`SAN9_JOBS` 控制并行度，默认 4。产物位于其中的 `install/`。同一工作目录只用于同一平台、工具链与依赖版本；更改这些输入时使用新的构建目录。每次执行会重新配置并复用构建系统判断仍有效的对象文件；依赖归档每次均重新核验。
 
 构建结束会运行实际共享库的组件白名单核对，并转换仓库内人工合成的 WMA v2 测试音频。独立 libvorbisfile 解码输出，核对声道、采样率、精确采样数和相对原始 WMA 解码 PCM 的信噪比（至少 20 dB）。转换检查按累计采样数重建时间戳，排空解码器、音频 FIFO 和编码器。
 

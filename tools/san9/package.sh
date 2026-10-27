@@ -6,7 +6,12 @@ work=${SAN9_BUILD_ROOT:-$root/.san9/build/$rid}
 work=$(cd "$work" && pwd)
 prefix=$work/install
 stage=$(mktemp -d "$work/package.XXXXXX")
-trap 'rm -rf "$stage"' EXIT
+cleanup() {
+    if [[ "$stage" == "$work"/package.* && -d "$stage" ]]; then
+        rm -rf -- "$stage"
+    fi
+}
+trap cleanup EXIT
 native=$stage/runtimes/$rid/native
 mkdir -p "$native" "$stage/share" "$root/.san9/packages"
 case "$rid" in

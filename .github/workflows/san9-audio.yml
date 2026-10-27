@@ -55,16 +55,18 @@ jobs:
             tar
             xz
             mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
             mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-nasm
       - name: Set up Linux toolchain
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y build-essential pkg-config nasm curl xz-utils
+          sudo apt-get install --no-install-recommends -y build-essential cmake ninja-build pkg-config nasm curl xz-utils
       - name: Set up macOS toolchain
         if: runner.os == 'macOS'
-        run: brew install pkgconf
+        run: brew install cmake ninja pkgconf
       - name: Build and verify restricted shared libraries
         run: bash tools/san9/build.sh '${{ matrix.rid }}'
       - name: Package libraries and notices

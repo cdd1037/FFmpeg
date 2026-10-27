@@ -1,2 +1,8 @@
 *.pnm -diff -text
 Changelog    merge=union
+tools/san9/*.sh text eol=lf
+tools/san9/*.c text eol=lf
+tools/san9/*.md text eol=lf
+tests/san9/*.md text eol=lf
+tests/san9/*.wma binary
+.github/workflows/san9-audio.yml text eol=lf

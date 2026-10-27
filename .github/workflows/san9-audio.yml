@@ -1,0 +1,126 @@
+name: San9 audio libraries
+
+on:
+  push:
+    branches: [master]
+    tags: ['san9-audio-v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: san9-audio-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            runner: windows-2022
+            shell: 'msys2 {0}'
+          - rid: linux-x64
+            runner: ubuntu-22.04
+            shell: bash
+          - rid: osx-arm64
+            runner: macos-15
+            shell: bash
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    env:
+      SAN9_JOBS: '4'
+      MACOSX_DEPLOYMENT_TARGET: '11.0'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Set up Windows toolchain
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@ec48f7c5447b3140e2b088413ae3a55687bccb6e # v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            curl
+            diffutils
+            tar
+            xz
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-nasm
+      - name: Set up Linux toolchain
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y build-essential cmake ninja-build pkg-config nasm curl xz-utils
+      - name: Set up macOS toolchain
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja pkgconf
+      - name: Build and verify restricted shared libraries
+        run: bash tools/san9/build.sh '${{ matrix.rid }}'
+      - name: Package libraries and notices
+        run: bash tools/san9/package.sh '${{ matrix.rid }}'
+      - name: Verify Windows package without the compiler environment
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $runtime = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+          New-Item -ItemType Directory -Path $runtime | Out-Null
+          & "$env:SystemRoot/System32/tar.exe" -xzf '.san9/packages/san9-audio-win-x64.tar.gz' -C $runtime
+          if ($LASTEXITCODE -ne 0) { throw 'Could not extract the Windows package.' }
+          $native = Join-Path $runtime 'runtimes/win-x64/native'
+          $env:PATH = "$native;$env:SystemRoot/System32"
+          & '.san9/build/win-x64/verify-audio.exe' 'tests/san9/stereo.wma' (Join-Path $runtime 'stereo.ogg')
+          if ($LASTEXITCODE -ne 0) { throw 'The package needs an undeclared runtime dependency.' }
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: san9-audio-${{ matrix.rid }}
+          path: .san9/packages/*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload configure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: logs-${{ matrix.rid }}
+          path: |
+            .san9/build/**/config.log
+            .san9/build/**/ffbuild/config.log
+            .san9/build/**/config.h
+            .san9/build/**/config_components.h
+          include-hidden-files: true
+          if-no-files-found: ignore
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/san9-audio-v')
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: san9-audio-*
+          merge-multiple: true
+          path: packages
+      - name: Publish all three verified packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          test "$(find packages -name '*.tar.gz' | wc -l)" -eq 3
+          gh release create "$RELEASE_TAG" packages/*.tar.gz --verify-tag --generate-notes --title "$RELEASE_TAG"

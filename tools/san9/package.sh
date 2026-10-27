@@ -25,5 +25,8 @@ case "$rid" in
 esac
 cp -R "$prefix/include" "$stage/include"
 cp -R "$prefix/share/san9" "$stage/share/san9"
+# Exercise the relocated libraries before archiving, with no build dependency library path.
+PATH="$native:$PATH" LD_LIBRARY_PATH="$native" DYLD_LIBRARY_PATH="$native" \
+    "$work/verify-audio" "$root/tests/san9/stereo.wma" "$work/packaged-stereo.ogg"
 tar -czf "$root/.san9/packages/san9-audio-$rid.tar.gz" -C "$stage" .
 echo "Package: $root/.san9/packages/san9-audio-$rid.tar.gz"
